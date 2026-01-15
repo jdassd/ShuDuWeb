@@ -5,6 +5,8 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 const SOCKET_BASE = import.meta.env.VITE_SOCKET_BASE || "http://localhost:8000";
 
 const emptyGrid = () => Array.from({ length: 9 }, () => Array(9).fill(0));
+const emptyNotes = () => Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
+const SESSION_KEY = "shudu_session";
 let heartbeatTimer = null;
 
 export const useGameStore = defineStore("game", {
@@ -16,8 +18,10 @@ export const useGameStore = defineStore("game", {
     role: "",
     difficulty: "medium",
     status: "idle",
+    puzzleId: "",
     puzzle: [],
     progress: emptyGrid(),
+    notes: emptyNotes(),
     errors: 0,
     opponent: { nickname: "", online: false, progress: 0, errors: 0 },
     timers: { host: 0, guest: 0 },
@@ -53,6 +57,7 @@ export const useGameStore = defineStore("game", {
       this.nickname = nickname;
       this.difficulty = payload.difficulty;
       this.status = "waiting";
+      this.saveSession();
     },
     async joinRoom(roomId, nickname) {
       const response = await fetch(`${API_BASE}/api/room/join`, {
@@ -72,6 +77,7 @@ export const useGameStore = defineStore("game", {
       this.nickname = nickname;
       this.difficulty = payload.difficulty;
       this.status = "waiting";
+      this.saveSession();
     },
     connectSocket() {
       if (this.socket) {
@@ -100,8 +106,10 @@ export const useGameStore = defineStore("game", {
       });
       this.socket.on("game_start", (payload) => {
         this.status = "playing";
+        this.puzzleId = payload.puzzle_id || "";
         this.puzzle = payload.puzzle || [];
         this.progress = emptyGrid();
+        this.notes = emptyNotes();
         this.errors = 0;
         this.reconnectTimeout = false;
         this.opponent.progress = 0;
@@ -109,6 +117,10 @@ export const useGameStore = defineStore("game", {
       this.socket.on("state_sync", (payload) => {
         this.status = payload.status;
         this.difficulty = payload.difficulty;
+        if (payload.puzzle_id && payload.puzzle_id !== this.puzzleId) {
+          this.notes = emptyNotes();
+        }
+        this.puzzleId = payload.puzzle_id || this.puzzleId;
         this.puzzle = payload.puzzle || [];
         this.progress = payload.progress || emptyGrid();
         this.errors = payload.errors || 0;
@@ -119,6 +131,9 @@ export const useGameStore = defineStore("game", {
         const { row, col, value, correct, errors } = payload;
         if (correct) {
           this.progress[row][col] = value;
+          if (value > 0) {
+            this.notes[row][col] = [];
+          }
         }
         this.errors = errors;
         this.lastCellResult = payload;
@@ -129,13 +144,25 @@ export const useGameStore = defineStore("game", {
       this.socket.on("timer_update", (payload) => {
         this.timers = payload.timers || this.timers;
       });
-      this.socket.on("player_disconnected", () => {
+      this.socket.on("player_disconnected", (payload) => {
+        if (payload?.player_id && payload.player_id === this.playerId) {
+          if (this.status === "playing") {
+            this.status = "paused";
+          }
+          return;
+        }
         this.opponent.online = false;
         if (this.status === "playing") {
           this.status = "paused";
         }
       });
-      this.socket.on("player_reconnected", () => {
+      this.socket.on("player_reconnected", (payload) => {
+        if (payload?.player_id && payload.player_id === this.playerId) {
+          if (this.status === "paused" && this.opponent.online) {
+            this.status = "playing";
+          }
+          return;
+        }
         this.opponent.online = true;
         if (this.status === "paused") {
           this.status = "playing";
@@ -147,8 +174,10 @@ export const useGameStore = defineStore("game", {
       });
       this.socket.on("room_reset", () => {
         this.status = "waiting";
+        this.puzzleId = "";
         this.puzzle = [];
         this.progress = emptyGrid();
+        this.notes = emptyNotes();
         this.errors = 0;
         this.result = null;
         this.reconnectTimeout = false;
@@ -175,6 +204,34 @@ export const useGameStore = defineStore("game", {
         return;
       }
       this.socket.emit("fill_cell", { player_token: this.playerToken, row, col, value });
+    },
+    toggleNote(row, col, value) {
+      if (!this.notes[row] || !this.notes[row][col]) {
+        return;
+      }
+      if (value < 1 || value > 9) {
+        return;
+      }
+      if ((this.puzzle[row] || [])[col] !== 0) {
+        return;
+      }
+      if ((this.progress[row] || [])[col] !== 0) {
+        return;
+      }
+      const cellNotes = this.notes[row][col];
+      const index = cellNotes.indexOf(value);
+      if (index >= 0) {
+        cellNotes.splice(index, 1);
+      } else {
+        cellNotes.push(value);
+        cellNotes.sort((a, b) => a - b);
+      }
+    },
+    clearNotes(row, col) {
+      if (!this.notes[row] || !this.notes[row][col]) {
+        return;
+      }
+      this.notes[row][col] = [];
     },
     sendHeartbeat() {
       if (!this.socket || !this.playerToken) {
@@ -209,7 +266,45 @@ export const useGameStore = defineStore("game", {
         this.socket.disconnect();
       }
       this.socket = null;
+      this.clearSession();
       this.$reset();
+    },
+    saveSession() {
+      if (!this.roomId || !this.playerToken) {
+        return;
+      }
+      const payload = {
+        roomId: this.roomId,
+        playerToken: this.playerToken,
+        playerId: this.playerId,
+        nickname: this.nickname,
+        role: this.role,
+        difficulty: this.difficulty
+      };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+    },
+    loadSession() {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) {
+        return;
+      }
+      try {
+        const payload = JSON.parse(raw);
+        this.roomId = payload.roomId || "";
+        this.playerToken = payload.playerToken || "";
+        this.playerId = payload.playerId || "";
+        this.nickname = payload.nickname || "";
+        this.role = payload.role || "";
+        this.difficulty = payload.difficulty || this.difficulty;
+        if (this.roomId && this.playerToken) {
+          this.status = "waiting";
+        }
+      } catch (error) {
+        this.clearSession();
+      }
+    },
+    clearSession() {
+      localStorage.removeItem(SESSION_KEY);
     }
   }
 });

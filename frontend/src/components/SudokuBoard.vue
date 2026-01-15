@@ -2,6 +2,7 @@
 const props = defineProps({
   puzzle: { type: Array, default: () => [] },
   progress: { type: Array, default: () => [] },
+  notes: { type: Array, default: () => [] },
   selected: { type: Object, default: null },
   errorCells: { type: Array, default: () => [] }
 });
@@ -28,6 +29,10 @@ const isHighlighted = (row, col) => {
 
 const isError = (row, col) => {
   return props.errorCells.includes(`${row}-${col}`);
+};
+
+const getNotes = (row, col) => {
+  return (props.notes?.[row] || [])[col] || [];
 };
 
 const selectCell = (row, col) => {
@@ -60,7 +65,12 @@ const selectCell = (row, col) => {
         ]"
         @click="selectCell(row - 1, col - 1)"
       >
-        {{ getValue(row - 1, col - 1) }}
+        <span v-if="getValue(row - 1, col - 1)">{{ getValue(row - 1, col - 1) }}</span>
+        <div v-else class="cell-notes">
+          <span v-for="note in 9" :key="`note-${row}-${col}-${note}`">
+            {{ getNotes(row - 1, col - 1).includes(note) ? note : "" }}
+          </span>
+        </div>
       </div>
     </div>
   </div>

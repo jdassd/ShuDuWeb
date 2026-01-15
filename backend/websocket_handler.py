@@ -90,6 +90,7 @@ def register_socket_handlers(sio: socketio.AsyncServer, manager: RoomManager) ->
         if not player:
             await sio.emit("error", {"message": "invalid_token"}, to=sid)
             return
+        was_offline = player.connection_status == "offline"
         player.sid = sid
         player.connection_status = "online"
         player.disconnected_at = None
@@ -101,6 +102,16 @@ def register_socket_handlers(sio: socketio.AsyncServer, manager: RoomManager) ->
             {"player_id": player.player_id, "nickname": player.nickname},
             room=room_id,
         )
+        if was_offline:
+            await sio.emit("player_reconnected", {"player_id": player.player_id}, room=room_id)
+            if (
+                room.status == "paused"
+                and room.guest
+                and room.host.connection_status == "online"
+                and room.guest.connection_status == "online"
+            ):
+                manager.resume_room(room)
+                await _start_timer_task(room)
         if room.status in ("playing", "paused", "finished"):
             await sio.emit("state_sync", build_state_payload(room, token), to=sid)
 
@@ -230,7 +241,20 @@ def register_socket_handlers(sio: socketio.AsyncServer, manager: RoomManager) ->
         player = manager.get_player(room, token)
         if not player:
             return
+        was_offline = player.connection_status == "offline"
         player.last_seen = time.time()
+        if was_offline:
+            player.connection_status = "online"
+            player.disconnected_at = None
+            await sio.emit("player_reconnected", {"player_id": player.player_id}, room=room.room_id)
+            if (
+                room.status == "paused"
+                and room.guest
+                and room.host.connection_status == "online"
+                and room.guest.connection_status == "online"
+            ):
+                manager.resume_room(room)
+                await _start_timer_task(room)
 
     @sio.event
     async def reconnect(sid, data):

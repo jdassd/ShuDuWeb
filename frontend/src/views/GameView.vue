@@ -11,6 +11,7 @@ const route = useRoute();
 
 const selected = ref(null);
 const errorCells = ref([]);
+const notesMode = ref(false);
 
 const formatTime = (totalSeconds) => {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -38,6 +39,14 @@ const handleSelect = (cell) => {
 
 const handleInput = (value) => {
   if (!selected.value) {
+    return;
+  }
+  if (notesMode.value) {
+    if (value === 0) {
+      store.clearNotes(selected.value.row, selected.value.col);
+    } else {
+      store.toggleNote(selected.value.row, selected.value.col, value);
+    }
     return;
   }
   store.sendFillCell(selected.value.row, selected.value.col, value);
@@ -92,7 +101,8 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <div class="game-layout">
+    <div class="game-stage">
+      <div class="game-layout" :class="{ 'is-paused': store.status === 'paused' }">
       <div>
         <div class="status-pill" style="margin-bottom: 18px; display: grid; gap: 8px;">
           <div style="display: flex; justify-content: space-between; gap: 12px;">
@@ -118,6 +128,7 @@ onMounted(() => {
         <SudokuBoard
           :puzzle="store.puzzle"
           :progress="store.progress"
+          :notes="store.notes"
           :selected="selected"
           :error-cells="errorCells"
           @select="handleSelect"
@@ -129,19 +140,29 @@ onMounted(() => {
           <div class="section-title">Number pad</div>
           <p class="hero-subtitle">Pick a cell, then choose a number.</p>
         </div>
+        <button :class="['button', notesMode ? 'secondary' : 'ghost']" @click="notesMode = !notesMode">
+          {{ notesMode ? "Notes mode: On" : "Notes mode: Off" }}
+        </button>
         <NumberPad @input="handleInput" />
         <button class="button ghost" @click="exitRoom">Exit room</button>
-        <div v-if="store.status === 'paused'" class="alert">
-          Opponent disconnected. Timer paused.
-        </div>
-        <div v-if="store.reconnectTimeout" class="alert">
-          Opponent is away too long. You can restart or leave.
-          <div style="display: flex; gap: 12px; margin-top: 12px;">
-            <button class="button" @click="store.requestRestart()">Restart</button>
+      </div>
+    </div>
+    <transition name="fade">
+      <div v-if="store.status === 'paused'" class="game-mask">
+        <div class="game-mask-card">
+          <div class="section-title">Match paused</div>
+          <div class="hero-subtitle">
+            Opponent disconnected. The board is locked until they return.
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button v-if="store.reconnectTimeout" class="button" @click="store.requestRestart()">
+              Restart
+            </button>
             <button class="button ghost" @click="exitRoom">Leave</button>
           </div>
         </div>
       </div>
+    </transition>
     </div>
   </section>
 </template>
