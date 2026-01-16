@@ -213,6 +213,10 @@ body::before {
   gap: 28px;
 }
 
+.game-layout > * {
+  min-width: 0;
+}
+
 @media (max-width: 900px) {
   .game-layout {
     grid-template-columns: 1fr;
@@ -220,12 +224,11 @@ body::before {
 }
 
 .sudoku-board {
-  --board-size: min(100%, 72vh, 560px);
+  --board-size: min(100%, 560px);
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   grid-template-rows: repeat(9, 1fr);
   width: var(--board-size);
-  height: var(--board-size);
   aspect-ratio: 1 / 1;
   margin: 0 auto;
   background: #fff;
@@ -240,7 +243,8 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1rem, 2.2vw, 1.6rem);
+  font-size: clamp(0.95rem, 4.2vw, 1.5rem);
+  line-height: 1;
   border-right: 1px solid var(--grid-soft);
   border-bottom: 1px solid var(--grid-soft);
   cursor: pointer;
@@ -287,11 +291,11 @@ body::before {
   grid-template-rows: repeat(3, 1fr);
   width: 100%;
   height: 100%;
-  font-size: clamp(0.45rem, 1.2vw, 0.6rem);
+  font-size: clamp(0.45rem, 1.6vw, 0.6rem);
+  line-height: 1;
   color: rgba(35, 31, 26, 0.55);
   align-items: center;
   justify-items: center;
-  line-height: 1;
 }
 
 .number-pad {
@@ -515,5 +519,19 @@ body::before {
 
   .number-pad button {
     padding: 12px 0;
+  }
+}
+
+@supports (width: 1cqw) {
+  .sudoku-board {
+    container-type: inline-size;
+  }
+
+  .cell {
+    font-size: clamp(0.95rem, 4.6cqw, 1.5rem);
+  }
+
+  .cell-notes {
+    font-size: clamp(0.4rem, 1.6cqw, 0.6rem);
   }
 }
