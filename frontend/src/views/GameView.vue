@@ -135,7 +135,7 @@ onMounted(() => {
         />
       </div>
 
-      <div class="card" style="display: grid; gap: 18px;">
+      <div class="card number-panel">
         <div>
           <div class="section-title">Number pad</div>
           <p class="hero-subtitle">Pick a cell, then choose a number.</p>

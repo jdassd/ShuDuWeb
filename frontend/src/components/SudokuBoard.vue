@@ -9,6 +9,11 @@ const props = defineProps({
 
 const emit = defineEmits(["select"]);
 
+const cells = Array.from({ length: 81 }, (_, index) => ({
+  row: Math.floor(index / 9),
+  col: index % 9
+}));
+
 const getValue = (row, col) => {
   const puzzleRow = props.puzzle?.[row] || [];
   const progressRow = props.progress?.[row] || [];
@@ -45,30 +50,25 @@ const selectCell = (row, col) => {
 
 <template>
   <div class="sudoku-board">
-    <div
-      v-for="row in 9"
-      :key="`row-${row}`"
-      class="row"
-      style="display: contents;"
-    >
+    <div class="sudoku-grid">
       <div
-        v-for="col in 9"
-        :key="`cell-${row}-${col}`"
+        v-for="cell in cells"
+        :key="`cell-${cell.row}-${cell.col}`"
         class="cell"
         :class="[
-          isPrefilled(row - 1, col - 1) ? 'prefilled' : 'editable',
-          isSelected(row - 1, col - 1) ? 'selected' : '',
-          isHighlighted(row - 1, col - 1) ? 'highlight' : '',
-          isError(row - 1, col - 1) ? 'error' : '',
-          (col - 1) % 3 === 2 ? 'thick-right' : '',
-          (row - 1) % 3 === 2 ? 'thick-bottom' : ''
+          isPrefilled(cell.row, cell.col) ? 'prefilled' : 'editable',
+          isSelected(cell.row, cell.col) ? 'selected' : '',
+          isHighlighted(cell.row, cell.col) ? 'highlight' : '',
+          isError(cell.row, cell.col) ? 'error' : '',
+          cell.col % 3 === 2 ? 'thick-right' : '',
+          cell.row % 3 === 2 ? 'thick-bottom' : ''
         ]"
-        @click="selectCell(row - 1, col - 1)"
+        @click="selectCell(cell.row, cell.col)"
       >
-        <span v-if="getValue(row - 1, col - 1)">{{ getValue(row - 1, col - 1) }}</span>
+        <span v-if="getValue(cell.row, cell.col)">{{ getValue(cell.row, cell.col) }}</span>
         <div v-else class="cell-notes">
-          <span v-for="note in 9" :key="`note-${row}-${col}-${note}`">
-            {{ getNotes(row - 1, col - 1).includes(note) ? note : "" }}
+          <span v-for="note in 9" :key="`note-${cell.row}-${cell.col}-${note}`">
+            {{ getNotes(cell.row, cell.col).includes(note) ? note : "" }}
           </span>
         </div>
       </div>
