@@ -54,6 +54,14 @@ body::before {
   gap: 28px;
 }
 
+.app-header {
+  align-items: center;
+}
+
+.header-badge {
+  justify-self: end;
+}
+
 .page {
   display: grid;
   gap: 28px;
@@ -185,6 +193,18 @@ body::before {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid rgba(35, 31, 26, 0.08);
+}
+
+.status-card {
+  margin-bottom: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .game-layout {
@@ -337,6 +357,19 @@ body::before {
   box-shadow: var(--shadow);
 }
 
+.mask-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .alert {
   padding: 14px 18px;
   border-radius: 14px;
@@ -363,4 +396,118 @@ body::before {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    width: min(1200px, 92vw);
+    padding: calc(24px + env(safe-area-inset-top)) 0 48px;
+    gap: 20px;
+  }
+
+  .page {
+    gap: 20px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .header-badge {
+    justify-self: start;
+  }
+
+  .hero-title {
+    font-size: clamp(2.1rem, 7vw, 3rem);
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+  }
+
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  .status-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .status-row--meta {
+    font-size: 0.95rem;
+    row-gap: 6px;
+  }
+
+  .room-code {
+    font-size: clamp(1.2rem, 6vw, 1.8rem);
+    letter-spacing: clamp(0.12em, 1.6vw, 0.2em);
+    padding: 12px 14px;
+  }
+
+  .game-layout {
+    gap: 20px;
+  }
+
+  .sudoku-board {
+    border-radius: 16px;
+  }
+
+  .cell {
+    font-size: clamp(1rem, 4.5vw, 1.4rem);
+  }
+
+  .number-pad {
+    gap: 10px;
+  }
+
+  .number-pad button {
+    padding: 14px 0;
+    font-size: clamp(1rem, 4.4vw, 1.15rem);
+  }
+
+  .input,
+  .select {
+    font-size: 1rem;
+  }
+
+  .action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    padding: calc(20px + env(safe-area-inset-top)) 0 40px;
+  }
+
+  .hero-title {
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .badge {
+    font-size: 0.8rem;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  .number-pad button {
+    padding: 12px 0;
+  }
 }

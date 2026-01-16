@@ -61,7 +61,7 @@ watch(
     <div class="card">
       <h2 class="section-title">Ready to start?</h2>
       <p class="hero-subtitle">When both players are ready, the puzzle begins immediately.</p>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <div class="action-row">
         <button class="button" @click="readyUp">Ready</button>
         <button class="button ghost" @click="exitRoom">Leave room</button>
       </div>

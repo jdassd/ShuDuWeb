@@ -104,8 +104,8 @@ onMounted(() => {
     <div class="game-stage">
       <div class="game-layout" :class="{ 'is-paused': store.status === 'paused' }">
       <div>
-        <div class="status-pill" style="margin-bottom: 18px; display: grid; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; gap: 12px;">
+        <div class="status-pill status-card">
+          <div class="status-row">
             <div>
               <div class="section-title">You</div>
               <div>{{ store.nickname }}</div>
@@ -115,7 +115,7 @@ onMounted(() => {
               <div>{{ store.opponent.nickname || "Unknown" }}</div>
             </div>
           </div>
-          <div style="display: flex; justify-content: space-between; gap: 12px;">
+          <div class="status-row status-row--meta">
             <div>Time: {{ formatTime(store.selfTimer) }}</div>
             <div>Errors: {{ store.errors }}/3</div>
             <div>Opponent: {{ formatTime(store.opponentTimer) }}</div>
@@ -154,7 +154,7 @@ onMounted(() => {
           <div class="hero-subtitle">
             Opponent disconnected. The board is locked until they return.
           </div>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <div class="mask-actions">
             <button v-if="store.reconnectTimeout" class="button" @click="store.requestRestart()">
               Restart
             </button>
