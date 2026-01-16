@@ -1,8 +1,14 @@
 import { defineStore } from "pinia";
 import { io } from "socket.io-client";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
-const SOCKET_BASE = import.meta.env.VITE_SOCKET_BASE || "http://localhost:8000";
+const fallbackBase =
+  typeof window !== "undefined"
+    ? import.meta.env.DEV
+      ? "http://localhost:8000"
+      : window.location.origin
+    : "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || fallbackBase;
+const SOCKET_BASE = import.meta.env.VITE_SOCKET_BASE || API_BASE;
 
 const emptyGrid = () => Array.from({ length: 9 }, () => Array(9).fill(0));
 const emptyNotes = () => Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
